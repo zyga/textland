@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Textland.  If not, see <http://www.gnu.org/licenses/>.
 
-from .bits import Offset, Rect2
+from .bits import Offset, Rect
 
 from .image import TextImage
 
@@ -29,7 +29,7 @@ class DrawingContext:
     def __init__(self, image: TextImage):
         self.image = image
         self.offset = Offset(0, 0)
-        self.clip = Rect2(0, 0, image.size.width, image.size.height)
+        self.clip = Rect(0, 0, image.size.width, image.size.height)
 
     def fill(self, c:str) -> None:
         for x in range(self.clip.x1, self.clip.x2):
@@ -37,14 +37,14 @@ class DrawingContext:
                 self.image.put(x, y, c)
 
     def clip_to(self, x1: int, y1: int, x2: int, y2: int) -> None:
-        self.clip = Rect2(x1, y1, x2, y2)
+        self.clip = Rect(x1, y1, x2, y2)
 
     def clip_by(self, dx1: int, dy1: int, dx2: int, dy2: int) -> None:
         x1 = self.clip.x1 + dx1
         y1 = self.clip.y1 + dy1
         x2 = self.clip.x2 + dx2
         y2 = self.clip.y2 + dy2
-        self.clip = Rect2(x1, y1, x2, y2)
+        self.clip = Rect(x1, y1, x2, y2)
 
     def move_to(self, x: int, y: int) -> None:
         """

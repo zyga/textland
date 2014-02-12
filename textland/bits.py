@@ -19,8 +19,6 @@
 from collections import namedtuple
 
 # Various sizing structs
-# TODO: merge Rect and Rect2
 Size = namedtuple('Size', ['width', 'height'])
 Offset = namedtuple('Offset', ['x', 'y'])
-Rect = namedtuple('Rect', ['x', 'y', 'size'])
-Rect2 = namedtuple('Rect2', ['x1', 'y1', 'x2', 'y2'])
+Rect = namedtuple('Rect', ['x1', 'y1', 'x2', 'y2'])
