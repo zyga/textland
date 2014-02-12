@@ -215,7 +215,11 @@ def get_display(display=None) -> IDisplay:
     if display is None:
         display = getenv("TEXTLAND_DISPLAY", "curses")
     if display == "curses":
-        return CursesDisplay()
+        try:
+            return CursesDisplay()
+        except ImportError:
+            # Sized like that to fit 80x25 without any overflow
+            return PrintDisplay(Size(77, 22))
     elif display == "print":
         return PrintDisplay()
     elif display == "test":
