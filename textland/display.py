@@ -173,6 +173,18 @@ class CursesDisplay(AbstractDisplay):
         key_code = self._screen.getch()
         if key_code == self._curses.KEY_RESIZE:
             return Event(EVENT_RESIZE, self.get_display_size())
+        elif key_code == self._curses.KEY_UP:
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_UP))
+        elif key_code == self._curses.KEY_DOWN:
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_DOWN))
+        elif key_code == self._curses.KEY_LEFT:
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_LEFT))
+        elif key_code == self._curses.KEY_RIGHT:
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_RIGHT))
+        elif key_code == ord(' '):
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_SPACE))
+        elif key_code == ord('\n'):
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_ENTER))
         else:
             return Event(EVENT_KEYBOARD, KeyboardData(chr(key_code)))
 
