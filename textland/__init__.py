@@ -28,6 +28,9 @@ __all__ = [
     'EVENT_KEYBOARD',
     'EVENT_MOUSE',
     'EVENT_RESIZE',
+    'NORMAL',
+    'REVERSE',
+    'UNDERLINE',
     'Event',
     'IApplication',
     'IDisplay',
@@ -44,6 +47,9 @@ __all__ = [
 
 from .abc import IApplication
 from .abc import IDisplay
+from .attribute import NORMAL
+from .attribute import REVERSE
+from .attribute import UNDERLINE
 from .bits import Rect
 from .bits import Size
 from .display import TestDisplay
