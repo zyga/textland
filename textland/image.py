@@ -18,15 +18,13 @@
 
 from array import array
 
-from .bits import Size
+from .bits import Cell, Size
 
 
 class TextImage:
     """
     A rectangular, mutable text image.
-
-    This image does not support any display attributes such as foreground color
-    background color, underline, bold, etc.
+    The image supports NORMAL, REVERSE and UNDERLINE as per-cell attributes.
     """
 
     def __init__(self, size: Size):
@@ -34,14 +32,21 @@ class TextImage:
         self.width = self.size.width
         self.text_buffer = array('u')
         self.text_buffer.extend(' ' * size.width * size.height)
+        self.format_buffer = array('H')  # Unsigned short
+        self.format_buffer.extend([0] * size.width * size.height)
 
-    def put(self, x: int, y: int, c: str) -> None:
+    def put(self, x: int, y: int, c: str, attribute: int) -> None:
+        # TODO: Add color support
         assert 0 <= x < self.size.width
         assert 0 <= y < self.size.height
         self.text_buffer[x + y * self.width] = c
+        self.format_buffer[x + y * self.width] = attribute
 
-    def get(self, x: int, y: int) -> str:
-        return self.text_buffer[x + y * self.width]
+    def get(self, x: int, y: int) -> Cell:
+        # TODO: Add color support
+        char = self.text_buffer[x + y * self.size.width]
+        attribute = self.format_buffer[x + y * self.size.width]
+        return Cell(char, attribute)
 
     def print_frame(self) -> None:
         text_buffer = self.text_buffer
