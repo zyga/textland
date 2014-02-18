@@ -138,13 +138,12 @@ class CursesDisplay(AbstractDisplay):
 
     def _init_curses(self):
         self._screen = self._curses.initscr()
+        if self._curses.has_colors():
+            self._curses.start_color()
+            self._curses.use_default_colors()
         self._curses.noecho()
         self._curses.cbreak()
         self._screen.keypad(1)
-        try:
-            self._curses.start_color()
-        except:
-            pass
 
     def _fini_curses(self):
         if self._screen is not None:
