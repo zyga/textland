@@ -54,8 +54,11 @@ class AbstractDisplay(IDisplay):
                 # but this is a hack that is not really applicable for curses
                 event = self.wait_for_event()
                 image = app.consume_event(event)
-            except StopIteration:
-                break
+            except StopIteration as exc:
+                if exc.args:
+                    return exc.args[0]
+                else:
+                    break
             else:
                 self.display_image(image)
 
