@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Textland.  If not, see <http://www.gnu.org/licenses/>.
 
+from .attribute import NORMAL
 from .bits import Offset, Rect
-
 from .image import TextImage
 
 
@@ -30,8 +30,9 @@ class DrawingContext:
         self.image = image
         self.offset = Offset(0, 0)
         self.clip = Rect(0, 0, image.size.width, image.size.height)
+        self._attribute = NORMAL
 
-    def fill(self, c:str) -> None:
+    def fill(self, c: str) -> None:
         for x in range(self.clip.x1, self.clip.x2):
             for y in range(self.clip.y1, self.clip.y2):
                 self.image.put(x, y, c)
@@ -57,6 +58,21 @@ class DrawingContext:
         Move paint offset by the specified delta
         """
         self.offset = Offset(self.offset.x + dx, self.offset.y + dy)
+
+    def set_attribute(self, attribute: int) -> None:
+        """
+        Set the current attribute brush
+        """
+        self._attribute = attribute
+
+    def get_attribute(self) -> int:
+        """
+        Get the current attribute brush
+        """
+        return self._attribute
+
+    def reset_attribute(self) -> None:
+        self.set_attribute(NORMAL)
 
     def print(self, text: str) -> None:
         """
@@ -89,4 +105,4 @@ class DrawingContext:
     def _put_x_y_c(self, x: int, y: int, c: str) -> None:
         if (self.clip.x1 <= x < self.clip.x2
                 and self.clip.y1 <= y < self.clip.y2):
-            self.image.put(x, y, c)
+            self.image.put(x, y, c, self._attribute)
