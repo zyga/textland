@@ -19,6 +19,7 @@
 from collections import namedtuple
 
 # Various sizing structs
+Cell = namedtuple('Cell', ['char', 'attribute'])
 Size = namedtuple('Size', ['width', 'height'])
 Offset = namedtuple('Offset', ['x', 'y'])
 Rect = namedtuple('Rect', ['x1', 'y1', 'x2', 'y2'])

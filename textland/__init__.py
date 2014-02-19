@@ -24,6 +24,7 @@ Text Land
 __version__ = (0, 1, 0, "final", 0)
 
 __all__ = [
+    'Cell',
     'DrawingContext',
     'EVENT_KEYBOARD',
     'EVENT_MOUSE',
@@ -37,7 +38,6 @@ __all__ = [
     'KeyboardData',
     'MouseData',
     'Rect',
-    'Rect2',
     'Size',
     'TestDisplay',
     'TextImage',
@@ -50,6 +50,7 @@ from .abc import IDisplay
 from .attribute import NORMAL
 from .attribute import REVERSE
 from .attribute import UNDERLINE
+from .bits import Cell
 from .bits import Rect
 from .bits import Size
 from .display import TestDisplay
