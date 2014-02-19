@@ -88,6 +88,22 @@ class DrawingContext:
             self._put_line(line)
             self.move_by(0, 1)
 
+    def border(self, lm=0, rm=0, tm=0, bm=0) -> None:
+        """
+        Draw a border around the edges of the current cli. Each parameter
+        specifies the margin to use for a specific side of the border.
+        """
+        self._put_x_y_c(self.clip.x1 + lm, self.clip.y1 + tm, '┌')
+        self._put_x_y_c(self.clip.x1 + lm, self.clip.y2 - 1 - bm, '└')
+        self._put_x_y_c(self.clip.x2 - rm - 1, self.clip.y1 + tm, '┐')
+        self._put_x_y_c(self.clip.x2 - rm - 1, self.clip.y2 - 1 - bm, '┘')
+        for x in range(self.clip.x1 + 1 + lm, self.clip.x2 - 1 - rm):
+            self._put_x_y_c(x, self.clip.y1 + tm, '─')
+            self._put_x_y_c(x, self.clip.y2 - 1 - bm, '─')
+        for y in range(self.clip.y1 + 1 + tm, self.clip.y2 - 1 - bm):
+            self._put_x_y_c(self.clip.x1 + lm, y, '│')
+            self._put_x_y_c(self.clip.x2 - rm - 1, y, '│')
+
     def _put_line(self, text: str) -> None:
         """
         Print one line, respecting clipping and offset
