@@ -24,6 +24,9 @@ from os import getenv
 from . import keys
 from .abc import IApplication
 from .abc import IDisplay
+from .attribute import NORMAL
+from .attribute import REVERSE
+from .attribute import UNDERLINE
 from .bits import Size
 from .events import Event, KeyboardData
 from .events import EVENT_KEYBOARD, EVENT_RESIZE
@@ -155,16 +158,35 @@ class CursesDisplay(AbstractDisplay):
         self._curses.nocbreak()
         self._curses.endwin()
 
+    def translate_attribute(self, cell_attribute: int) -> int:
+        attribute_mapping = {
+            NORMAL: self._curses.A_NORMAL,
+            REVERSE: self._curses.A_REVERSE,
+            UNDERLINE: self._curses.A_UNDERLINE,
+        }
+        result = self._curses.A_NORMAL
+        for attr, curses_attr in attribute_mapping.items():
+            if cell_attribute & attr:
+                result |= curses_attr
+        return result
+
     def display_image(self, image: TextImage) -> None:
-        text_buffer = image.text_buffer
+        # TODO: Add color support
         width = image.size.width
         height = image.size.height
         for y in range(height - 1):
-            line = text_buffer[y * width: (y + 1) * width].tounicode()
-            self._screen.addstr(y, 0, line)
+            for x in range(width):
+                cell = image.get(x, y)
+                attribute = self.translate_attribute(cell.attribute)
+                self._screen.addstr(y, x, cell.char, attribute)
         y += 1
-        line = text_buffer[y * width: (y + 1) * width].tounicode()
-        self._screen.addstr(y, 0, line[:-1])
+        for x in range(1, width):
+            cell = image.get(x, y)
+            attribute = self.translate_attribute(cell.attribute)
+            self._screen.addstr(y, x - 1, cell.char, attribute)
+        cell = image.get(0, y)
+        attribute = self.translate_attribute(cell.attribute)
+        self._screen.insstr(y, 0, cell.char, attribute)
         self._screen.refresh()
 
     def get_display_size(self) -> Size:
