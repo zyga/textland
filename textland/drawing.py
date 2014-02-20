@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Textland.  If not, see <http://www.gnu.org/licenses/>.
 
+from .attribute import NORMAL
 from .bits import Offset, Rect
-
 from .image import TextImage
 
 
@@ -30,8 +30,9 @@ class DrawingContext:
         self.image = image
         self.offset = Offset(0, 0)
         self.clip = Rect(0, 0, image.size.width, image.size.height)
+        self._attribute = NORMAL
 
-    def fill(self, c:str) -> None:
+    def fill(self, c: str) -> None:
         for x in range(self.clip.x1, self.clip.x2):
             for y in range(self.clip.y1, self.clip.y2):
                 self.image.put(x, y, c)
@@ -58,6 +59,21 @@ class DrawingContext:
         """
         self.offset = Offset(self.offset.x + dx, self.offset.y + dy)
 
+    def set_attribute(self, attribute: int) -> None:
+        """
+        Set the current attribute brush
+        """
+        self._attribute = attribute
+
+    def get_attribute(self) -> int:
+        """
+        Get the current attribute brush
+        """
+        return self._attribute
+
+    def reset_attribute(self) -> None:
+        self.set_attribute(NORMAL)
+
     def print(self, text: str) -> None:
         """
         Print the specified text
@@ -71,6 +87,22 @@ class DrawingContext:
         for line in text.splitlines():
             self._put_line(line)
             self.move_by(0, 1)
+
+    def border(self, lm=0, rm=0, tm=0, bm=0) -> None:
+        """
+        Draw a border around the edges of the current cli. Each parameter
+        specifies the margin to use for a specific side of the border.
+        """
+        self._put_x_y_c(self.clip.x1 + lm, self.clip.y1 + tm, '┌')
+        self._put_x_y_c(self.clip.x1 + lm, self.clip.y2 - 1 - bm, '└')
+        self._put_x_y_c(self.clip.x2 - rm - 1, self.clip.y1 + tm, '┐')
+        self._put_x_y_c(self.clip.x2 - rm - 1, self.clip.y2 - 1 - bm, '┘')
+        for x in range(self.clip.x1 + 1 + lm, self.clip.x2 - 1 - rm):
+            self._put_x_y_c(x, self.clip.y1 + tm, '─')
+            self._put_x_y_c(x, self.clip.y2 - 1 - bm, '─')
+        for y in range(self.clip.y1 + 1 + tm, self.clip.y2 - 1 - bm):
+            self._put_x_y_c(self.clip.x1 + lm, y, '│')
+            self._put_x_y_c(self.clip.x2 - rm - 1, y, '│')
 
     def _put_line(self, text: str) -> None:
         """
@@ -89,4 +121,4 @@ class DrawingContext:
     def _put_x_y_c(self, x: int, y: int, c: str) -> None:
         if (self.clip.x1 <= x < self.clip.x2
                 and self.clip.y1 <= y < self.clip.y2):
-            self.image.put(x, y, c)
+            self.image.put(x, y, c, self._attribute)

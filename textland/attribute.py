@@ -2,7 +2,7 @@
 #
 # Copyright 2014 Canonical Ltd.
 # Written by:
-#   Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
+#   Sylvain Pineau <sylvain.pineau@canonical.com>
 #
 # Textland is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3,
@@ -16,10 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Textland.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections import namedtuple
-
-# Various sizing structs
-Cell = namedtuple('Cell', ['char', 'attribute'])
-Size = namedtuple('Size', ['width', 'height'])
-Offset = namedtuple('Offset', ['x', 'y'])
-Rect = namedtuple('Rect', ['x1', 'y1', 'x2', 'y2'])
+NORMAL = 0     # Normal attribute
+REVERSE = 1    # Reverse background and foreground colors
+UNDERLINE = 2  # Underline mode

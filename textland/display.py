@@ -24,6 +24,9 @@ from os import getenv
 from . import keys
 from .abc import IApplication
 from .abc import IDisplay
+from .attribute import NORMAL
+from .attribute import REVERSE
+from .attribute import UNDERLINE
 from .bits import Size
 from .events import Event, KeyboardData
 from .events import EVENT_KEYBOARD, EVENT_RESIZE
@@ -54,8 +57,11 @@ class AbstractDisplay(IDisplay):
                 # but this is a hack that is not really applicable for curses
                 event = self.wait_for_event()
                 image = app.consume_event(event)
-            except StopIteration:
-                break
+            except StopIteration as exc:
+                if exc.args:
+                    return exc.args[0]
+                else:
+                    break
             else:
                 self.display_image(image)
 
@@ -138,13 +144,12 @@ class CursesDisplay(AbstractDisplay):
 
     def _init_curses(self):
         self._screen = self._curses.initscr()
+        if self._curses.has_colors():
+            self._curses.start_color()
+            self._curses.use_default_colors()
         self._curses.noecho()
         self._curses.cbreak()
         self._screen.keypad(1)
-        try:
-            self._curses.start_color()
-        except:
-            pass
 
     def _fini_curses(self):
         if self._screen is not None:
@@ -153,16 +158,35 @@ class CursesDisplay(AbstractDisplay):
         self._curses.nocbreak()
         self._curses.endwin()
 
+    def translate_attribute(self, cell_attribute: int) -> int:
+        attribute_mapping = {
+            NORMAL: self._curses.A_NORMAL,
+            REVERSE: self._curses.A_REVERSE,
+            UNDERLINE: self._curses.A_UNDERLINE,
+        }
+        result = self._curses.A_NORMAL
+        for attr, curses_attr in attribute_mapping.items():
+            if cell_attribute & attr:
+                result |= curses_attr
+        return result
+
     def display_image(self, image: TextImage) -> None:
-        text_buffer = image.text_buffer
+        # TODO: Add color support
         width = image.size.width
         height = image.size.height
         for y in range(height - 1):
-            line = text_buffer[y * width: (y + 1) * width].tounicode()
-            self._screen.addstr(y, 0, line)
+            for x in range(width):
+                cell = image.get(x, y)
+                attribute = self.translate_attribute(cell.attribute)
+                self._screen.addstr(y, x, cell.char, attribute)
         y += 1
-        line = text_buffer[y * width: (y + 1) * width].tounicode()
-        self._screen.addstr(y, 0, line[:-1])
+        for x in range(1, width):
+            cell = image.get(x, y)
+            attribute = self.translate_attribute(cell.attribute)
+            self._screen.addstr(y, x - 1, cell.char, attribute)
+        cell = image.get(0, y)
+        attribute = self.translate_attribute(cell.attribute)
+        self._screen.insstr(y, 0, cell.char, attribute)
         self._screen.refresh()
 
     def get_display_size(self) -> Size:
@@ -173,6 +197,18 @@ class CursesDisplay(AbstractDisplay):
         key_code = self._screen.getch()
         if key_code == self._curses.KEY_RESIZE:
             return Event(EVENT_RESIZE, self.get_display_size())
+        elif key_code == self._curses.KEY_UP:
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_UP))
+        elif key_code == self._curses.KEY_DOWN:
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_DOWN))
+        elif key_code == self._curses.KEY_LEFT:
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_LEFT))
+        elif key_code == self._curses.KEY_RIGHT:
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_RIGHT))
+        elif key_code == ord(' '):
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_SPACE))
+        elif key_code == ord('\n'):
+            return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_ENTER))
         else:
             return Event(EVENT_KEYBOARD, KeyboardData(chr(key_code)))
 
