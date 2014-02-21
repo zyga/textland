@@ -2,7 +2,7 @@
 #
 # Copyright 2014 Canonical Ltd.
 # Written by:
-#   Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
+#   Sylvain Pineau <sylvain.pineau@canonical.com>
 #
 # Textland is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3,
@@ -16,10 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Textland.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections import namedtuple
-
-# Various sizing structs
-Cell = namedtuple('Cell', ['char', 'attributes'])
-Size = namedtuple('Size', ['width', 'height'])
-Offset = namedtuple('Offset', ['x', 'y'])
-Rect = namedtuple('Rect', ['x1', 'y1', 'x2', 'y2'])
+# ANSI color index
+(
+    BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE,
+    BRIGHT_BLACK, BRIGHT_RED, BRIGHT_GREEN, BRIGHT_YELLOW, BRIGHT_BLUE,
+    BRIGHT_MAGENTA, BRIGHT_CYAN, BRIGHT_WHITE
+) = range(16)

@@ -24,7 +24,10 @@ from .bits import Cell, Size
 class TextImage:
     """
     A rectangular, mutable text image.
-    The image supports NORMAL, REVERSE and UNDERLINE as per-cell attributes.
+
+    The image supports NORMAL, REVERSE and UNDERLINE as per-cell attributes,
+    the 8 colors described in the ANSI standard and the BOLD video attribute
+    to render the foreground colors as bright (aka light or intensified).
     """
 
     def __init__(self, size: Size):
@@ -32,21 +35,35 @@ class TextImage:
         self.width = self.size.width
         self.text_buffer = array('u')
         self.text_buffer.extend(' ' * size.width * size.height)
-        self.format_buffer = array('H')  # Unsigned short
-        self.format_buffer.extend([0] * size.width * size.height)
+        self.attribute_buffer = array('H')  # Unsigned short
+        self.attribute_buffer.extend([0] * size.width * size.height)
 
-    def put(self, x: int, y: int, c: str, attribute: int) -> None:
-        # TODO: Add color support
+    def put(self, x: int, y: int, c: str,
+            attribute: int,
+            foreground: int,
+            background: int) -> None:
+        """
+        Fill the format_buffer bytes as follow:
+        |1234,5678|1234,5678|
+        |     attr| fg , bg |
+        """
         assert 0 <= x < self.size.width
         assert 0 <= y < self.size.height
         self.text_buffer[x + y * self.width] = c
-        self.format_buffer[x + y * self.width] = attribute
+        self.attribute_buffer[x + y * self.width] = attribute
+        self.attribute_buffer[x + y * self.width] <<= 4
+        self.attribute_buffer[x + y * self.width] |= foreground
+        self.attribute_buffer[x + y * self.width] <<= 4
+        self.attribute_buffer[x + y * self.width] |= background
 
     def get(self, x: int, y: int) -> Cell:
-        # TODO: Add color support
         char = self.text_buffer[x + y * self.size.width]
-        attribute = self.format_buffer[x + y * self.size.width]
-        return Cell(char, attribute)
+        #fmt = self.attribute_buffer[x + y * self.size.width]
+        #bold = fmt >> 12
+        #attribute = fmt >> 8 & 0xF
+        #foreground = fmt >> 4 & 0xF
+        #background = fmt & 0xF
+        return Cell(char, self.attribute_buffer[x + y * self.size.width])
 
     def print_frame(self) -> None:
         text_buffer = self.text_buffer
