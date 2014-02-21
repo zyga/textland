@@ -17,6 +17,7 @@
 # along with Textland.  If not, see <http://www.gnu.org/licenses/>.
 
 from .attribute import NORMAL
+from .colors import BLACK, WHITE
 from .bits import Offset, Rect
 from .image import TextImage
 
@@ -31,6 +32,8 @@ class DrawingContext:
         self.offset = Offset(0, 0)
         self.clip = Rect(0, 0, image.size.width, image.size.height)
         self._attribute = NORMAL
+        self._foreground = WHITE
+        self._background = BLACK
 
     def fill(self, c: str) -> None:
         for x in range(self.clip.x1, self.clip.x2):
@@ -72,7 +75,17 @@ class DrawingContext:
         return self._attribute
 
     def reset_attribute(self) -> None:
-        self.set_attribute(NORMAL)
+        self._attribute = NORMAL
+
+    def set_fg_color(self, fg) -> None:
+        self._foreground = fg
+
+    def set_bg_color(self, bg) -> None:
+        self._background = bg
+
+    def reset_colors(self) -> None:
+        self._foreground = WHITE
+        self._background = BLACK
 
     def print(self, text: str) -> None:
         """
@@ -121,4 +134,7 @@ class DrawingContext:
     def _put_x_y_c(self, x: int, y: int, c: str) -> None:
         if (self.clip.x1 <= x < self.clip.x2
                 and self.clip.y1 <= y < self.clip.y2):
-            self.image.put(x, y, c, self._attribute)
+            self.image.put(x, y, c,
+                           self._attribute,
+                           self._foreground,
+                           self._background)

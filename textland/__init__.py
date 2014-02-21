@@ -25,6 +25,22 @@ __version__ = (0, 1, 0, "final", 0)
 
 __all__ = [
     'Cell',
+    'BLACK',
+    'BLUE',
+    'CYAN',
+    'GREEN',
+    'MAGENTA',
+    'RED',
+    'WHITE',
+    'YELLOW',
+    'BRIGHT_BLACK',
+    'BRIGHT_BLUE',
+    'BRIGHT_CYAN',
+    'BRIGHT_GREEN',
+    'BRIGHT_MAGENTA',
+    'BRIGHT_RED',
+    'BRIGHT_WHITE',
+    'BRIGHT_YELLOW',
     'DrawingContext',
     'EVENT_KEYBOARD',
     'EVENT_MOUSE',
@@ -53,6 +69,22 @@ from .attribute import UNDERLINE
 from .bits import Cell
 from .bits import Rect
 from .bits import Size
+from .colors import BLACK
+from .colors import BLUE
+from .colors import BRIGHT_BLACK
+from .colors import BRIGHT_BLUE
+from .colors import BRIGHT_CYAN
+from .colors import BRIGHT_GREEN
+from .colors import BRIGHT_MAGENTA
+from .colors import BRIGHT_RED
+from .colors import BRIGHT_WHITE
+from .colors import BRIGHT_YELLOW
+from .colors import CYAN
+from .colors import GREEN
+from .colors import MAGENTA
+from .colors import RED
+from .colors import WHITE
+from .colors import YELLOW
 from .display import TestDisplay
 from .display import get_display
 from .drawing import DrawingContext
