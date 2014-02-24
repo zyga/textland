@@ -205,8 +205,10 @@ class CursesDisplay(AbstractDisplay):
         To select the right color combination, we just need to use the right
         color pair number.
         """
-        for fg in range(self._curses.COLORS):
-            for bg in range(self._curses.COLORS):
+        # XXX: hardcode 8, since curses.COLORS could be larger than the
+        # portable set of 64 color pairs
+        for fg in range(8):
+            for bg in range(8):
                 if fg == WHITE and bg == BLACK:
                     continue
                 self._curses.init_pair(self._pair_index(fg, bg), fg, bg)
