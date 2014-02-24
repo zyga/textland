@@ -16,10 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Textland.  If not, see <http://www.gnu.org/licenses/>.
 
-from .attribute import NORMAL
-from .colors import BLACK, WHITE
 from .bits import Offset, Rect
-from .image import TextImage
+from .image import TextImage, TextAttributes
 
 
 class DrawingContext:
@@ -31,14 +29,13 @@ class DrawingContext:
         self.image = image
         self.offset = Offset(0, 0)
         self.clip = Rect(0, 0, image.size.width, image.size.height)
-        self._attribute = NORMAL
-        self._foreground = WHITE
-        self._background = BLACK
+        self.attributes = TextAttributes()
 
     def fill(self, c: str) -> None:
+        packed_attr = self.attributes.packed
         for x in range(self.clip.x1, self.clip.x2):
             for y in range(self.clip.y1, self.clip.y2):
-                self.image.put(x, y, c)
+                self.image.put(x, y, c, packed_attr)
 
     def clip_to(self, x1: int, y1: int, x2: int, y2: int) -> None:
         self.clip = Rect(x1, y1, x2, y2)
@@ -62,31 +59,6 @@ class DrawingContext:
         """
         self.offset = Offset(self.offset.x + dx, self.offset.y + dy)
 
-    def set_attribute(self, attribute: int) -> None:
-        """
-        Set the current attribute brush
-        """
-        self._attribute = attribute
-
-    def get_attribute(self) -> int:
-        """
-        Get the current attribute brush
-        """
-        return self._attribute
-
-    def reset_attribute(self) -> None:
-        self._attribute = NORMAL
-
-    def set_fg_color(self, fg) -> None:
-        self._foreground = fg
-
-    def set_bg_color(self, bg) -> None:
-        self._background = bg
-
-    def reset_colors(self) -> None:
-        self._foreground = WHITE
-        self._background = BLACK
-
     def print(self, text: str) -> None:
         """
         Print the specified text
@@ -97,8 +69,9 @@ class DrawingContext:
         The offset is automatically adjusted to point
         to the end of the string.
         """
+        pa = self.attributes.packed
         for line in text.splitlines():
-            self._put_line(line)
+            self._put_line(line, pa)
             self.move_by(0, 1)
 
     def border(self, lm=0, rm=0, tm=0, bm=0) -> None:
@@ -106,35 +79,34 @@ class DrawingContext:
         Draw a border around the edges of the current cli. Each parameter
         specifies the margin to use for a specific side of the border.
         """
-        self._put_x_y_c(self.clip.x1 + lm, self.clip.y1 + tm, '┌')
-        self._put_x_y_c(self.clip.x1 + lm, self.clip.y2 - 1 - bm, '└')
-        self._put_x_y_c(self.clip.x2 - rm - 1, self.clip.y1 + tm, '┐')
-        self._put_x_y_c(self.clip.x2 - rm - 1, self.clip.y2 - 1 - bm, '┘')
+        pa = self.attributes.packed
+        self._put_x_y_c_pa(self.clip.x1 + lm, self.clip.y1 + tm, '┌', pa)
+        self._put_x_y_c_pa(self.clip.x1 + lm, self.clip.y2 - 1 - bm, '└', pa)
+        self._put_x_y_c_pa(self.clip.x2 - rm - 1, self.clip.y1 + tm, '┐', pa)
+        self._put_x_y_c_pa(
+            self.clip.x2 - rm - 1, self.clip.y2 - 1 - bm, '┘', pa)
         for x in range(self.clip.x1 + 1 + lm, self.clip.x2 - 1 - rm):
-            self._put_x_y_c(x, self.clip.y1 + tm, '─')
-            self._put_x_y_c(x, self.clip.y2 - 1 - bm, '─')
+            self._put_x_y_c_pa(x, self.clip.y1 + tm, '─', pa)
+            self._put_x_y_c_pa(x, self.clip.y2 - 1 - bm, '─', pa)
         for y in range(self.clip.y1 + 1 + tm, self.clip.y2 - 1 - bm):
-            self._put_x_y_c(self.clip.x1 + lm, y, '│')
-            self._put_x_y_c(self.clip.x2 - rm - 1, y, '│')
+            self._put_x_y_c_pa(self.clip.x1 + lm, y, '│', pa)
+            self._put_x_y_c_pa(self.clip.x2 - rm - 1, y, '│', pa)
 
-    def _put_line(self, text: str) -> None:
+    def _put_line(self, text: str, pa: int) -> None:
         """
         Print one line, respecting clipping and offset
         """
         if "\n" in text:
             raise ValueError("should be without any newlines")
         for dx, c in enumerate(text):
-            self._put_dx_dy_c(dx, 0, c)
+            self._put_dx_dy_c_pa(dx, 0, c, pa)
 
-    def _put_dx_dy_c(self, dx: int, dy: int, c: str) -> None:
+    def _put_dx_dy_c_pa(self, dx: int, dy: int, c: str, pa: int) -> None:
         x = self.offset.x + dx
         y = self.offset.y + dy
-        self._put_x_y_c(x, y, c)
+        self._put_x_y_c_pa(x, y, c, pa)
 
-    def _put_x_y_c(self, x: int, y: int, c: str) -> None:
+    def _put_x_y_c_pa(self, x: int, y: int, c: str, pa: int) -> None:
         if (self.clip.x1 <= x < self.clip.x2
                 and self.clip.y1 <= y < self.clip.y2):
-            self.image.put(x, y, c,
-                           self._attribute,
-                           self._foreground,
-                           self._background)
+            self.image.put(x, y, c, pa)

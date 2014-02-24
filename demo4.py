@@ -22,8 +22,6 @@ from textland import EVENT_KEYBOARD
 from textland import EVENT_RESIZE
 from textland import Event
 from textland import IApplication
-from textland import KeyboardData
-from textland import NORMAL
 from textland import RED
 from textland import REVERSE
 from textland import Size
@@ -53,18 +51,18 @@ class DemoApp(IApplication):
         ctx.print(title)
         ctx.print('=' * len(title))
         ctx.move_to(0, 3)
-        ctx.set_fg_color(BRIGHT_GREEN)
-        ctx.set_bg_color(RED)
+        ctx.attributes.fg = BRIGHT_GREEN
+        ctx.attributes.bg = RED
         ctx.print("Type 'q' to quit")
-        ctx.reset_colors()
+        ctx.attributes.reset()
         ctx.move_to(10, 6)
-        ctx.set_attribute(REVERSE)
+        ctx.attributes.style = REVERSE
         ctx.print("REVERSE")
         ctx.move_to(10, 7)
-        ctx.set_attribute(UNDERLINE)
+        ctx.attributes.style = UNDERLINE
         ctx.print("UNDERLINE")
         ctx.move_to(10, 8)
-        ctx.set_attribute(UNDERLINE | REVERSE)
+        ctx.attributes.style = UNDERLINE | REVERSE
         ctx.print("BOTH")
 
 

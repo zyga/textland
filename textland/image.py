@@ -3,6 +3,7 @@
 # Copyright 2014 Canonical Ltd.
 # Written by:
 #   Zygmunt Krynicki <zygmunt.krynicki@canonical.com>
+#   Sylvain Pineau <sylvain.pineau@canonical.com>
 #
 # Textland is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3,
@@ -19,6 +20,18 @@
 from array import array
 
 from .bits import Cell, Size
+
+# ANSI color index
+(
+    BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE,
+    BRIGHT_BLACK, BRIGHT_RED, BRIGHT_GREEN, BRIGHT_YELLOW, BRIGHT_BLUE,
+    BRIGHT_MAGENTA, BRIGHT_CYAN, BRIGHT_WHITE
+) = range(16)
+
+# Supported text styles.
+NORMAL = 0  # Normal (default style)
+REVERSE = 1 << 0  # Reverse background and foreground colors
+UNDERLINE = 1 << 1  # Underline mode
 
 
 class TextImage:
@@ -38,32 +51,38 @@ class TextImage:
         self.attribute_buffer = array('H')  # Unsigned short
         self.attribute_buffer.extend([0] * size.width * size.height)
 
-    def put(self, x: int, y: int, c: str,
-            attribute: int,
-            foreground: int,
-            background: int) -> None:
+    def put(self, x: int, y: int, c: str, pa: int) -> None:
         """
-        Fill the format_buffer bytes as follow:
-        |1234,5678|1234,5678|
-        |     attr| fg , bg |
+        Put character *c* with attributes *pa* into cell at (*x*, *y*)
+
+        :param x:
+            X coordinate
+        :param y:
+            Y coordinate
+        :param c:
+            One character string
+        :param pa:
+            Packed attribute (up to uint16_t)
         """
         assert 0 <= x < self.size.width
         assert 0 <= y < self.size.height
-        self.text_buffer[x + y * self.width] = c
-        self.attribute_buffer[x + y * self.width] = attribute
-        self.attribute_buffer[x + y * self.width] <<= 4
-        self.attribute_buffer[x + y * self.width] |= foreground
-        self.attribute_buffer[x + y * self.width] <<= 4
-        self.attribute_buffer[x + y * self.width] |= background
+        offset = x + y * self.width
+        self.text_buffer[offset] = c
+        self.attribute_buffer[offset] = pa
 
     def get(self, x: int, y: int) -> Cell:
-        char = self.text_buffer[x + y * self.size.width]
-        #fmt = self.attribute_buffer[x + y * self.size.width]
-        #bold = fmt >> 12
-        #attribute = fmt >> 8 & 0xF
-        #foreground = fmt >> 4 & 0xF
-        #background = fmt & 0xF
-        return Cell(char, self.attribute_buffer[x + y * self.size.width])
+        """
+        Get a cell from (*x*, *y*)
+
+        :param x:
+            X coordinate
+        :param y:
+            Y coordinate
+        :returns:
+            Cell(c, pa)
+        """
+        offset = x + y * self.width
+        return Cell(self.text_buffer[offset], self.attribute_buffer[offset])
 
     def print_frame(self) -> None:
         text_buffer = self.text_buffer
@@ -74,3 +93,30 @@ class TextImage:
             line = text_buffer[y * width: (y + 1) * width].tounicode()
             print("|{}|".format(line))
         print("\\{}/".format('=' * width))
+
+
+class TextAttributes:
+
+    def __init__(self):
+        self.fg = WHITE
+        self.bg = BLACK
+        self.style = NORMAL
+
+    def reset(self):
+        self.fg = WHITE
+        self.bg = BLACK
+        self.style = NORMAL
+
+    @property
+    def packed(self):
+        return ((self.fg & 15) << 8) + ((self.bg & 15) << 4) + (self.style & 3)
+
+    @staticmethod
+    def unpack(pa: int) -> (int, int, int):
+        """
+        Unpack packed attributes into (fg, bg, style)
+        """
+        fg = (pa >> 8) & 15
+        bg = (pa >> 4) & 15
+        style = pa & 3
+        return fg, bg, style

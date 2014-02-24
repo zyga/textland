@@ -24,14 +24,15 @@ from os import getenv
 from . import keys
 from .abc import IApplication
 from .abc import IDisplay
-from .attribute import NORMAL
-from .attribute import REVERSE
-from .attribute import UNDERLINE
 from .bits import Size
-from .colors import BLACK, WHITE
-from .events import Event, KeyboardData
 from .events import EVENT_KEYBOARD, EVENT_RESIZE
+from .events import Event, KeyboardData
+from .image import BLACK
+from .image import REVERSE
+from .image import TextAttributes
 from .image import TextImage
+from .image import UNDERLINE
+from .image import WHITE
 
 
 class AbstractDisplay(IDisplay):
@@ -135,48 +136,9 @@ class CursesDisplay(AbstractDisplay):
         import curses
         self._curses = curses
         self._screen = None
+        self._curses_attr = [0] * 0xffff
 
-    def run(self, app: IApplication) -> None:
-        self._init_curses()
-        try:
-            return super().run(app)
-        finally:
-            self._fini_curses()
-
-    def _init_curses(self):
-        self._screen = self._curses.initscr()
-        if self._curses.has_colors():
-            self._curses.start_color()
-            self._setup_color_pairs()
-        self._curses.noecho()
-        self._curses.cbreak()
-        self._screen.keypad(1)
-
-    def _pair_index(self, fg: int, bg: int) -> int:
-        # XXX: Support the default colors (-1)
-        #return (bg + 2) * 9 - fg - 2
-        return bg * 8 + 7 - fg
-
-    def _setup_color_pairs(self):
-        """
-        Initialize all the color pairs based on the _pair_index() formula.
-        To select the right color combination, we just need to use the right
-        color pair number.
-        """
-        for fg in range(self._curses.COLORS):
-            for bg in range(self._curses.COLORS):
-                if fg == WHITE and bg == BLACK:
-                    continue
-                self._curses.init_pair(self._pair_index(fg, bg), fg, bg)
-
-    def _fini_curses(self):
-        if self._screen is not None:
-            self._screen.keypad(0)
-        self._curses.echo()
-        self._curses.nocbreak()
-        self._curses.endwin()
-
-    def _translate_attributes(self, cell) -> int:
+    def _pa_to_curses(self, pa: int) -> int:
         """
         Translate cell attributes into supported curses attributes
 
@@ -197,27 +159,62 @@ class CursesDisplay(AbstractDisplay):
         might have better luck using the high-color versions", see:
         http://urwid.org/manual/displayattributes.html#bright-background-colors
         """
-        video_attributes_mapping = {
-            NORMAL: self._curses.A_NORMAL,
-            REVERSE: self._curses.A_REVERSE,
-            UNDERLINE: self._curses.A_UNDERLINE,
-        }
-        cell_attributes = cell.attributes
-        video_attributes = cell_attributes >> 8 & 0xF
-        foreground_color = cell_attributes >> 4 & 0xF
-        background_color = cell_attributes & 0xF
-        result = self._curses.A_NORMAL
-        for attr, curses_attr in video_attributes_mapping.items():
-            if video_attributes & attr:
-                result |= curses_attr
-        if foreground_color > 7:
-            result |= self._curses.A_BOLD  # Bright foreground colors
-            foreground_color -= 8
-        if background_color > 7:
-            background_color -= 8  # Bright backgrounds are not supported
-        index = self._pair_index(foreground_color, background_color)
-        result |= self._curses.color_pair(index)
-        return result
+        fg, bg, style = TextAttributes.unpack(pa)
+        curses_attr = 0
+        if style == 0:
+            curses_attr = self._curses.A_NORMAL
+        if style & REVERSE:
+            curses_attr |= self._curses.A_REVERSE
+        if style & UNDERLINE:
+            curses_attr |= self._curses.A_UNDERLINE
+        if fg > 7:
+            curses_attr |= self._curses.A_BOLD  # Bright foreground colors
+            fg -= 8
+        if bg > 7:
+            bg -= 8  # Bright backgrounds are not supported
+        curses_attr |= self._curses.color_pair(self._pair_index(fg, bg))
+        return curses_attr
+
+    def _pair_index(self, fg: int, bg: int) -> int:
+        # XXX: Support the default colors (-1)
+        #return (bg + 2) * 9 - fg - 2
+        return bg * 8 + 7 - fg
+
+    def run(self, app: IApplication) -> None:
+        self._init_curses()
+        try:
+            return super().run(app)
+        finally:
+            self._fini_curses()
+
+    def _init_curses(self):
+        self._screen = self._curses.initscr()
+        if self._curses.has_colors():
+            self._curses.start_color()
+            self._setup_color_pairs()
+        self._curses.noecho()
+        self._curses.cbreak()
+        self._screen.keypad(1)
+
+    def _setup_color_pairs(self):
+        """
+        Initialize all the color pairs based on the _pair_index() formula.
+        To select the right color combination, we just need to use the right
+        color pair number.
+        """
+        for fg in range(self._curses.COLORS):
+            for bg in range(self._curses.COLORS):
+                if fg == WHITE and bg == BLACK:
+                    continue
+                self._curses.init_pair(self._pair_index(fg, bg), fg, bg)
+        self._curses_attr = [self._pa_to_curses(i) for i in range(0xffff)]
+
+    def _fini_curses(self):
+        if self._screen is not None:
+            self._screen.keypad(0)
+        self._curses.echo()
+        self._curses.nocbreak()
+        self._curses.endwin()
 
     def display_image(self, image: TextImage) -> None:
         width = image.size.width
@@ -225,17 +222,16 @@ class CursesDisplay(AbstractDisplay):
         for y in range(height - 1):
             for x in range(width):
                 cell = image.get(x, y)
-                self._screen.addstr(y, x, cell.char,
-                                    self._translate_attributes(cell))
+                self._screen.addstr(
+                    y, x, cell.char, self._curses_attr[cell.attributes])
         y += 1
         for x in range(1, width):
             cell = image.get(x, y)
             self._screen.addstr(
-                y, x - 1, cell.char, self._translate_attributes(cell))
+                y, x - 1, cell.char, self._curses_attr[cell.attributes])
         cell = image.get(0, y)
         self._screen.insstr(
-            y, 0,
-            cell.char, self._translate_attributes(cell))
+            y, 0, cell.char, self._curses_attr[cell.attributes])
         self._screen.refresh()
 
     def get_display_size(self) -> Size:
