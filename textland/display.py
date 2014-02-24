@@ -245,7 +245,8 @@ class CursesDisplay(AbstractDisplay):
 
     def wait_for_event(self) -> Event:
         key_code = self._screen.getch()
-        if key_code == self._curses.KEY_RESIZE:
+        # XXX -1 is for OSX
+        if key_code == self._curses.KEY_RESIZE or key_code == -1:
             return Event(EVENT_RESIZE, self.get_display_size())
         elif key_code == self._curses.KEY_UP:
             return Event(EVENT_KEYBOARD, KeyboardData(keys.KEY_UP))
