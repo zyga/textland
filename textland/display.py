@@ -181,8 +181,8 @@ class CursesDisplay(AbstractDisplay):
         return bg * 8 + 7 - fg
 
     def run(self, app: IApplication) -> None:
-        self._init_curses()
         try:
+            self._init_curses()
             return super().run(app)
         finally:
             self._fini_curses()
