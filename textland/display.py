@@ -244,6 +244,8 @@ class CursesDisplay(AbstractDisplay):
         return Size(x, y)
 
     def wait_for_event(self) -> Event:
+        # throw away all typeaheads
+        self._curses.flushinp()
         key_code = self._screen.getch()
         # XXX -1 is for OSX
         if key_code == self._curses.KEY_RESIZE or key_code == -1:
